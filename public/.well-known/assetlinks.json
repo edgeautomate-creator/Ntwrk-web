@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.ntwrkapp.android",
+    "sha256_cert_fingerprints": ["C4:7F:42:FF:EA:ED:01:EB:42:D2:C3:FC:91:52:DA:54:1D:A7:95:30:CB:1A:20:AC:27:E5:ED:8F:AE:B1:ED:0E"]
+  }
+}]

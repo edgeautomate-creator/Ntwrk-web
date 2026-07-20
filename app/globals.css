@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 84 81% 44%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 84 81% 44%;
+    --chart-1: 84 81% 44%;
+    --chart-2: 0 0% 0%;
+    --chart-3: 0 0% 45%;
+    --chart-4: 0 0% 70%;
+    --chart-5: 0 0% 85%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 100%;
+    --card: 240 6% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 6% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 84 81% 44%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 4% 20%;
+    --input: 240 4% 20%;
+    --ring: 84 81% 44%;
+    --chart-1: 84 81% 44%;
+    --chart-2: 0 0% 100%;
+    --chart-3: 0 0% 65%;
+    --chart-4: 0 0% 35%;
+    --chart-5: 0 0% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen;
+  }
+}
+
+@layer utilities {
+  .ntwrk-gradient {
+    @apply bg-background;
+  }
+
+  .ntwrk-card {
+    @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+  }
+
+  .ntwrk-button-primary {
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded transition-all;
+  }
+
+  .ntwrk-button-accent {
+    @apply bg-[#84c225] hover:bg-[#6fa01d] text-black font-bold rounded transition-all;
+  }
+
+  .ntwrk-input {
+    @apply bg-transparent border-b-2 border-input text-foreground placeholder:text-muted-foreground focus:border-foreground focus:ring-0 rounded-none px-0;
+  }
+
+  .auth-accent-lines line {
+    stroke: hsl(var(--foreground));
+  }
+
+  /* Keep legacy dashboard utilities readable until they are migrated to semantic colors. */
+  .dark .bg-white {
+    background-color: hsl(var(--background)) !important;
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .dark .text-black,
+  .dark .text-gray-900,
+  .dark .text-gray-800,
+  .dark .text-gray-700 {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-gray-300,
+  .dark .border-gray-400 {
+    border-color: hsl(var(--border)) !important;
+  }
+
+  .dark .border-black {
+    border-color: hsl(var(--foreground)) !important;
+  }
+}

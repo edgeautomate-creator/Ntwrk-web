@@ -1,0 +1,9 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [{
+      "appIDs": ["JVU9353M7L.com.ntwrkapp.play"],
+      "paths": ["/dashboard/tournaments/*"]
+    }]
+  }
+}

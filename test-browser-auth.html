@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Auth</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Auth Test</h1>
+    <div id="output"></div>
+
+    <script>
+        const { createClient } = supabase;
+
+        const supabaseUrl = 'https://evsrrxfqxbgaubxskpko.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2c3JyeGZxeGJnYXVieHNrcGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNzA1ODUsImV4cCI6MjA4Njc0NjU4NX0.IzOId4dmFwyLmIF6Mj5j8_J6SNWs7NFsd7B3lorMHp0';
+
+        const client = createClient(supabaseUrl, supabaseKey);
+
+        async function test() {
+            const output = document.getElementById('output');
+
+            // Get session from localStorage
+            const session = await client.auth.getSession();
+
+            output.innerHTML += `<p>Session exists: ${!!session.data.session}</p>`;
+            output.innerHTML += `<p>User ID: ${session.data.session?.user?.id || 'none'}</p>`;
+            output.innerHTML += `<p>Access token (first 50 chars): ${session.data.session?.access_token?.substring(0, 50) || 'none'}</p>`;
+
+            // Try to query tournaments
+            const { data, error } = await client
+                .from('tournaments')
+                .select('id, name, created_by')
+                .limit(5);
+
+            output.innerHTML += `<p>Query error: ${error ? error.message : 'none'}</p>`;
+            output.innerHTML += `<p>Query data count: ${data?.length || 0}</p>`;
+
+            // Try to insert a test tournament
+            const { data: insertData, error: insertError } = await client
+                .from('tournaments')
+                .insert({
+                    name: 'Test Tournament',
+                    created_by: session.data.session?.user?.id,
+                    expected_teams: 4,
+                    playoff_teams: 2,
+                    format: 'round_robin',
+                    best_of: 1
+                })
+                .select()
+                .single();
+
+            output.innerHTML += `<p>Insert error: ${insertError ? `${insertError.message} (code: ${insertError.code})` : 'none'}</p>`;
+            output.innerHTML += `<p>Insert success: ${insertData ? 'YES - ID: ' + insertData.id : 'NO'}</p>`;
+        }
+
+        test();
+    </script>
+</body>
+</html>
