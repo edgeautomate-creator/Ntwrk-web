@@ -123,7 +123,8 @@ export function buildReseededRoundMatches(
   tournamentId: string,
   orderedTeamIds: string[],
   nextRoundName: string,
-  startingMatchNumber: number
+  startingMatchNumber: number,
+  teams: { id: string; playoff_seed?: number | null }[] = []
 ): ReseedMatchPayload[] {
   const count = orderedTeamIds.length;
   if (count < 2) return [];
@@ -132,20 +133,25 @@ export function buildReseededRoundMatches(
   let matchNumber = startingMatchNumber;
   let bracketPosition = 1;
 
+  // Create a map of team IDs to their original playoff seeds
+  const seedByTeamId = new Map(teams.map((team) => [team.id, team.playoff_seed ?? 9999]));
+
   if (count % 2 === 1) {
     const byeTeamId = orderedTeamIds[0];
     const playingTeams = orderedTeamIds.slice(1);
     const halfLen = Math.floor(playingTeams.length / 2);
 
     for (let i = 0; i < halfLen; i++) {
+      const team1Id = playingTeams[i];
+      const team2Id = playingTeams[playingTeams.length - 1 - i];
       matches.push({
         tournament_id: tournamentId,
         match_number: matchNumber++,
         round: nextRoundName,
-        team1_id: playingTeams[i],
-        team2_id: playingTeams[playingTeams.length - 1 - i],
-        seeding_position_team1: i + 2,
-        seeding_position_team2: playingTeams.length + 1 - i,
+        team1_id: team1Id,
+        team2_id: team2Id,
+        seeding_position_team1: seedByTeamId.get(team1Id) ?? 9999,
+        seeding_position_team2: seedByTeamId.get(team2Id) ?? 9999,
         status: 'scheduled',
         is_playoff_match: true,
         playoff_round: nextRoundName,
@@ -161,7 +167,7 @@ export function buildReseededRoundMatches(
         round: byeRoundName,
         team1_id: byeTeamId,
         team2_id: null,
-        seeding_position_team1: 1,
+        seeding_position_team1: seedByTeamId.get(byeTeamId) ?? 9999,
         seeding_position_team2: null,
         status: 'scheduled',
         is_playoff_match: true,
@@ -175,14 +181,16 @@ export function buildReseededRoundMatches(
 
   const halfLen = count / 2;
   for (let i = 0; i < halfLen; i++) {
+    const team1Id = orderedTeamIds[i];
+    const team2Id = orderedTeamIds[count - 1 - i];
     matches.push({
       tournament_id: tournamentId,
       match_number: matchNumber++,
       round: nextRoundName,
-      team1_id: orderedTeamIds[i],
-      team2_id: orderedTeamIds[count - 1 - i],
-      seeding_position_team1: i + 1,
-      seeding_position_team2: count - i,
+      team1_id: team1Id,
+      team2_id: team2Id,
+      seeding_position_team1: seedByTeamId.get(team1Id) ?? 9999,
+      seeding_position_team2: seedByTeamId.get(team2Id) ?? 9999,
       status: 'scheduled',
       is_playoff_match: true,
       playoff_round: nextRoundName,

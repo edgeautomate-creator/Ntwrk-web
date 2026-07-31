@@ -1363,7 +1363,8 @@
           tournament.id,
           orderedTeamIds,
           nextRound,
-          (maxMatch?.match_number ?? 1000) + 1
+          (maxMatch?.match_number ?? 1000) + 1,
+          tournamentTeams
         );
 
         if (payloads.length === 0) {

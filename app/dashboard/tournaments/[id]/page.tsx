@@ -1670,7 +1670,8 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
         tournament.id,
         orderedTeamIds,
         nextRound,
-        (maxMatch?.match_number ?? 1000) + 1
+        (maxMatch?.match_number ?? 1000) + 1,
+        teams
       );
 
       if (payloads.length === 0) return;
@@ -1919,7 +1920,7 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
   };
 
 
-  const advancePlayoffBracket = async (completedMatch: TournamentMatch, winnerId: string) => {
+ const advancePlayoffBracket = async (completedMatch: TournamentMatch, winnerId: string) => {
     if (!tournament) return;
     if (completedMatch.playoff_round === 'Finals') return;
 
@@ -1943,7 +1944,7 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
     // We count ALL bye-round matches (not just null ones) to get the stable original byeCount.
     const { data: allByeRoundMatches } = await supabase
       .from('tournament_matches')
-      .select('id, bracket_position, team2_id')
+      .select('id, bracket_position, team1_id, team2_id')
       .eq('tournament_id', tournament.id)
       .eq('is_playoff_match', true)
       .eq('playoff_round', nextRound)
@@ -1952,7 +1953,84 @@ export default function TournamentDetailPage({ params }: { params: { id: string 
     const totalByes = allByeRoundMatches?.length ?? 0;
 
     if (totalByes > 0) {
-      // Derive the corresponding bye-placeholder bracket_position for this early-round match.
+      // When reseeding is ON, don't fill bye slots one-at-a-time by bracket position.
+      // Wait until ALL early-round matches are complete, then rebuild the next round
+      // so the highest seed faces the lowest remaining seed (1v5, 2v3) instead of
+      // the fixed bracket-position pairing (1v3, 2v5).
+      if (tournament.playoff_reseeding) {
+        const { data: earlyRoundMatches } = await supabase
+          .from('tournament_matches')
+          .select('id, status, winner_team_id')
+          .eq('tournament_id', tournament.id)
+          .eq('is_playoff_match', true)
+          .eq('playoff_round', completedMatch.playoff_round)
+          .is('deleted_at', null);
+
+        const allEarlyComplete =
+          !!earlyRoundMatches &&
+          earlyRoundMatches.length > 0 &&
+          earlyRoundMatches.every(
+            (m) => m.status === 'completed' && !!m.winner_team_id
+          );
+
+        if (!allEarlyComplete) {
+          await loadMatches();
+          return;
+        }
+
+        // Gather all survivors: bye teams (team1_id from bye placeholders) + early-round winners.
+        const survivorIds: string[] = [];
+        for (const m of allByeRoundMatches ?? []) {
+          if (m.team2_id === null && m.bracket_position != null) {
+            if (m.team1_id) survivorIds.push(m.team1_id);
+          }
+        }
+        for (const m of earlyRoundMatches ?? []) {
+          if (m.winner_team_id) survivorIds.push(m.winner_team_id);
+        }
+
+        const orderedTeamIds = sortSurvivorsByOriginalSeed(survivorIds, teams);
+
+        // Delete the pre-created bye placeholder matches so the reseed builder can
+        // recreate the next round cleanly.
+        const placeholderIds = (allByeRoundMatches ?? [])
+          .filter((m) => m.team2_id === null)
+          .map((m) => m.id);
+        if (placeholderIds.length > 0) {
+          await supabase
+            .from('tournament_matches')
+            .delete()
+            .in('id', placeholderIds);
+        }
+
+        const { data: maxMatch } = await supabase
+          .from('tournament_matches')
+          .select('match_number')
+          .eq('tournament_id', tournament.id)
+          .order('match_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const payloads = buildReseededRoundMatches(
+          tournament.id,
+          orderedTeamIds,
+          nextRound,
+          (maxMatch?.match_number ?? 1000) + 1,
+          teams
+        );
+
+        if (payloads.length > 0) {
+          const { error: insertError } = await supabase
+            .from('tournament_matches')
+            .insert(payloads);
+          if (insertError) throw insertError;
+        }
+
+        await loadMatches();
+        return;
+      }
+
+      // Reseeding OFF: fill the bye slot by fixed bracket position (original behavior).
       const byeSlot = pos - totalByes;
       const byePlaceholder = allByeRoundMatches!.find(p => p.bracket_position === byeSlot);
 
